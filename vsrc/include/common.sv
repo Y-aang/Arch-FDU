@@ -36,7 +36,7 @@ package common;
 	typedef logic 	    u1;
 
 	typedef u5 creg_addr_t;
-	// typedef u64 word_t;
+	typedef u64 word_t;
 	typedef u8 strobe_t;
 	typedef u12 csr_addr_t;
 
