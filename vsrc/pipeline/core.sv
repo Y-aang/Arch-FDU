@@ -3,10 +3,17 @@
 `ifdef VERILATOR
 `include "include/common.sv"
 `include "pipeline/regfile/regfile.sv"
-`include "pipeline/decode/decode.sv"
 `include "pipeline/fetch/fetch.sv"
 `include "pipeline/fetch/pcselect.sv"
-
+`include "pipeline/decode/decode.sv"
+`include "pipeline/execute/execute.sv"
+`include "pipeline/memory/memory.sv"
+`include "pipeline/writeback/writeback.sv"
+`include "pipeline/regfile/pipereg_IF_ID.sv"
+`include "pipeline/regfile/pipereg_ID_EX.sv"
+`include "pipeline/regfile/pipereg_EX_MEM.sv"
+`include "pipeline/regfile/pipereg_MEM_WB.sv"
+`include "pipeline/hazard/hazard.sv"
 `else
 
 `endif
@@ -30,38 +37,56 @@ module core
 		end
 	end
 	assign ireq.addr = pc;
+	assign ireq.valid = dataH.ireq_valid;
 
 	u32 raw_instr;
 	assign raw_instr=iresp.data;
 
-	fetch_data_t dataF;
-	decode_data_t dataD;
-	execute_data_t dataE;
-	memory_data_t dataM;
+	fetch_data_t dataF, dataF_next;
+	decode_data_t dataD, dataD_next;
+	execute_data_t dataE, dataE_next;
+	memory_data_t dataM, dataM_next;
+	writeback_data_t dataW;
+	hazard_data_t dataH;
 	
 	creg_addr_t ra1, ra2;
 	word_t rd1, rd2;
 
+	instfunc_t op;
+    u64 offset;
+
+//fetch
 	pcselect pcselect(
-		.pcplus4(pc + 4),
+		.pc(pc),
+		.stall_pc(dataH.pc_out),
+		.op(dataH.instfunc),
+		.offset(dataH.offset_out),
 		.pc_selected(pc_nxt)
 	);
 
 	fetch fetch(
-		.dataF(dataF),
 		.raw_instr(raw_instr),
-		.pc
+		.pc,
+		.instr_FETCH(dataH.instr_FETCH),
+		.dataF_next,
+		.dataF
 	);
 
+	pipereg_IF_ID pipereg_IF_ID(
+		.clk, .reset,
+		.reset_IF_ID(dataH.reset_IF_ID),
+		.dataF_in(dataF),
+		.dataF_out(dataF_next)
+	);
+
+//decode
 	decode decode(
-		.dataF,
+		.dataF(dataF_next),
 		.dataD,
 
-		.ra1, .ra2, .rd1, .rd2
+		.ra1, .ra2, .rd1, .rd2,
+		.op, .offset
 	);
-
-	word_t result;
-	assign result = rd1 + {{52{raw_instr[31]}}, raw_instr[31:20]};
 
 	regfile regfile(
 		.clk, .reset,
@@ -69,9 +94,57 @@ module core
 		.ra2,
 		.rd1,
 		.rd2,
-		.wvalid(dataD.ctl.regwrite),
-		.wa(dataD.dst),
-		.wd(result)
+		.wvalid(dataW.ctl.regwrite),
+		.wa(dataW.dst),
+		.wd(dataW.result)
+	);
+
+	pipereg_ID_EX pipereg_ID_EX(
+		.clk, .reset,
+		.reset_ID_EX(dataH.reset_ID_EX),
+		.dataD_in(dataD),
+		.dataD_out(dataD_next)
+	);
+
+	execute execute(
+		.dataD(dataD_next),
+		.dataE
+	);
+
+	pipereg_EX_MEM pipereg_EX_MEM(
+		.clk, .reset,
+		.dataE_in(dataE),
+		.dataE_out(dataE_next)
+	);
+
+	memory memory(
+		.dataE(dataE_next),
+		.dresp,
+		.dreq,
+		.dataM
+	);
+
+	pipereg_MEM_WB pipereg_MEM_WB(
+		.clk, .reset,
+		.dataM_in(dataM),
+		.dataM_out(dataM_next)
+	);
+
+	writeback writeback(
+		.dataM(dataM_next),
+		.dataW
+	);
+
+	hazard hazard(
+		.dataE_dst(dataE.dst), .dataM_dst(dataM.dst), .dataW_dst(dataW.dst),
+		.ra1, .ra2,
+		.rd1, .rd2,
+		.pc_in(dataD.pc),
+		.ctl(dataD.ctl),
+		.offset_in(offset),
+		.op,
+
+		.dataH
 	);
 
 `ifdef VERILATOR
@@ -79,15 +152,15 @@ module core
 		.clock              (clk),
 		.coreid             (0),
 		.index              (0),
-		.valid              (~reset),
-		.pc                 (pc),
+		.valid              (~dataW.is_bubble),
+		.pc                 (dataW.pc),
 		.instr              (0),
-		.skip               (0),
+		.skip               (dataW.ctl.memwrite),
 		.isRVC              (0),
 		.scFailed           (0),
-		.wen                (dataD.ctl.regwrite),
-		.wdest              ({3'b0, dataD.dst}),
-		.wdata              (result)
+		.wen                (dataW.ctl.regwrite),
+		.wdest              ({3'b0, dataW.dst}),
+		.wdata              (dataW.result)
 	);
 	      
 	DifftestArchIntRegState DifftestArchIntRegState (
