@@ -60,6 +60,18 @@ module execute
                 alu_a = dataD.srcb;
                 alu_b = '0;
             end
+            SB:begin
+                alu_a = dataD.srcb;
+                alu_b = '0;
+            end
+            SH:begin
+                alu_a = dataD.srcb;
+                alu_b = '0;
+            end
+            SW:begin
+                alu_a = dataD.srcb;
+                alu_b = '0;
+            end
             ADD:begin
                 alu_a = dataD.srca;
                 alu_b = dataD.srcb;
@@ -131,6 +143,7 @@ module execute
             end
             SLL:begin
                 alu_a = dataD.srca;
+                // alu_b = {59'b0, dataD.srcb[4:0]};
                 alu_b = dataD.srcb;
             end
             SLT:begin
@@ -143,10 +156,11 @@ module execute
             end
             SRL:begin
                 alu_a = dataD.srca;
-                alu_b = dataD.srcb;
+                alu_b = {58'b0, dataD.srcb[5:0]};
             end
             SRA:begin
                 alu_a = dataD.srca;
+                // alu_b = {59'b0, dataD.srcb[4:0]};
                 alu_b = dataD.srcb;
             end
             ADDIW:begin
@@ -223,6 +237,15 @@ module execute
                 dataE.result = { {32{result[31]}},result[31:0] };
             end
             SLLW:begin
+                dataE.result = { {32{result[31]}},result[31:0] };
+            end
+            SRLW:begin
+                dataE.result = { {32{result[31]}},result[31:0] };
+            end
+            SRAW:begin
+                dataE.result = { {32{result[31]}},result[31:0] };
+            end
+            SRAIW:begin
                 dataE.result = { {32{result[31]}},result[31:0] };
             end
             default:begin

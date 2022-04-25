@@ -14,7 +14,13 @@ module pipereg_ID_EX
         input logic clk, reset,
         input reset_t reset_ID_EX,
         input decode_data_t dataD_in,
-        output decode_data_t dataD_out
+        output decode_data_t dataD_out,
+
+        input decode_data_t last_dataD,
+        // output decode_data_t copy_dataD,
+
+        input logic Iwait,
+        input logic Dwait
 );
     logic my_reset;
     always_comb begin
@@ -34,7 +40,23 @@ module pipereg_ID_EX
 
     always_ff @ (posedge clk)
     begin
-        if(my_reset|| reset) begin    
+        // copy_dataD <= dataD_in;
+        if(Dwait == 1 ) begin
+            dataD_out <= last_dataD;
+        end
+        // if(Iwait == 1 ) begin
+        //     dataD_out.srca <= last_dataD.srca ;
+        //     dataD_out.srcb <= last_dataD.srcb;
+        //     dataD_out.immediate <= last_dataD.immediate;
+        //     dataD_out.ctl.op <= last_dataD.ctl.op;
+        //     dataD_out.ctl.alufunc <= last_dataD.ctl.alufunc;
+        //     dataD_out.ctl.regwrite <= last_dataD.ctl.regwrite;
+        //     dataD_out.dst <= last_dataD.dst;
+        //     dataD_out.pc <= last_dataD.pc;
+        //     dataD_out.is_bubble <= 1;
+        //     dataD_out.shamt <= last_dataD.shamt;
+        // end
+        else if(my_reset|| reset) begin    
             dataD_out.srca <= '0;
             dataD_out.srcb <= '0;
             dataD_out.immediate <= '0;

@@ -27,25 +27,95 @@ module core
 	output dbus_req_t  dreq,
 	input  dbus_resp_t dresp
 );
+	// always_ff @(posedge clk) begin
+	// 	if (dataW.is_bubble == 0) begin
+	// 		$display("%x",dataW.pc);
+	// 	end
+	// 	else begin
+			
+	// 	end
+	// end
+	// $display("%x",dataW.pc);
+
 	/* TODO: Add your pipeline here. */
 	u64 pc, pc_nxt;
 	always_ff @( posedge clk ) begin
 		if(reset)	begin
 			pc <= 64'h8000_0000; 
+			ireq.addr <= '0;
+			ireq.valid <='1;//防止错误地址改动的部分
 		end else begin
 			pc <= pc_nxt;
+			if( ireq.valid == 1'b0   )begin
+				ireq.addr <= pc_nxt;
+				ireq.valid <=1'b1 ;//防止错误地址改动的部分
+			end
+			else begin
+				if(iresp.data_ok == 0)begin
+					ireq.addr <= ireq.addr;
+					ireq.valid <=ireq.valid;
+				end
+				else begin
+					ireq.addr <= ireq.addr;
+					ireq.valid <= 1'b0;
+				end
+			end	
+
 		end
 	end
-	assign ireq.addr = pc;
-	assign ireq.valid = dataH.ireq_valid;
+	// assign ireq.addr = pc;
+
+	// always_ff @ (posedge clk) 
+	// begin
+	// 	if( ireq.valid == 1'b0   )begin
+	// 		ireq.addr <= pc;
+	// 		ireq.valid <=1'b1;
+	// 	end
+	// 	else begin
+	// 		if(iresp.data_ok == 0)begin
+	// 			ireq.addr <= ireq.addr;
+	// 			ireq.valid <=ireq.valid;
+	// 		end
+	// 		else begin
+	// 			ireq.addr <= ireq.addr;
+	// 			ireq.valid <= 1'b0;
+	// 		end
+	// 	end	
+	// end
+
+	// always_comb begin
+	// 	if(op == BEQ_P  )begin
+	// 		if(dataD_next.ctl.op != UNKNOWN)
+	// 			ireq.valid = 1'b1 ;
+	// 		else
+	// 			ireq.valid = 1'b1 ;
+	// 	end
+	// 	// else if(op == JAL_P  )begin
+	// 	// 	if(dataD_next.ctl.op == JAL)
+	// 	// 		ireq.valid = 1'b1 ;
+	// 	// 	else
+	// 	// 		ireq.valid = 1'b0 ;
+	// 	// end
+	// 	else
+	// 		ireq.valid = 1'b1 ;
+	// end
 
 	u32 raw_instr;
-	assign raw_instr=iresp.data;
+	// assign raw_instr=iresp.data;
+	always_comb begin
+		if(iresp.data_ok == 1)
+			raw_instr=iresp.data;
+		else
+			raw_instr='0;
+	end
 
-	fetch_data_t dataF, dataF_next;
-	decode_data_t dataD, dataD_next;
-	execute_data_t dataE, dataE_next;
-	memory_data_t dataM, dataM_next;
+	assign Dwait = dreq.valid & (~dresp.data_ok);
+	assign Iwait = ireq.valid & (~iresp.data_ok);
+
+	fetch_data_t dataF, dataF_next, dataF_copy;
+	decode_data_t dataD, dataD_next, dataD_copy;
+	execute_data_t dataE, dataE_next, dataE_copy;
+	memory_data_t dataM, dataM_next, dataM_copy;
 	writeback_data_t dataW;
 	hazard_data_t dataH;
 	
@@ -55,13 +125,18 @@ module core
 	instfunc_t op;
     u64 offset;
 
+	logic Dwait, Iwait, is_jump;
+
+
 //fetch
 	pcselect pcselect(
 		.pc(pc),
 		.stall_pc(dataH.pc_out),
 		.op(dataH.instfunc),
 		.offset(dataH.offset_out),
-		.pc_selected(pc_nxt)
+		.pc_selected(pc_nxt),
+
+		.Iwait, .Dwait, .ireq_valid(ireq.valid), .is_bubble(dataD.is_bubble)
 	);
 
 	fetch fetch(
@@ -69,14 +144,25 @@ module core
 		.pc,
 		.instr_FETCH(dataH.instr_FETCH),
 		.dataF_next,
-		.dataF
+		.dataF,
+
+		.Iwait, .Dwait,
+		.ivalid(ireq.valid)
 	);
 
 	pipereg_IF_ID pipereg_IF_ID(
 		.clk, .reset,
 		.reset_IF_ID(dataH.reset_IF_ID),
 		.dataF_in(dataF),
-		.dataF_out(dataF_next)
+		.dataF_out(dataF_next),
+
+		.last_dataF(dataF_copy),
+		.copy_dataF(dataF_copy),
+		.last_dataF_D(dataF_next),
+
+		.Iwait, .Dwait, .ireq_valid(ireq.valid),
+		.iresp_data_ok(iresp.data_ok),
+		.op
 	);
 
 //decode
@@ -85,7 +171,7 @@ module core
 		.dataD,
 
 		.ra1, .ra2, .rd1, .rd2,
-		.op, .offset
+		.op, .offset, .is_jump
 	);
 
 	regfile regfile(
@@ -94,7 +180,7 @@ module core
 		.ra2,
 		.rd1,
 		.rd2,
-		.wvalid(dataW.ctl.regwrite),
+		.wvalid(dataW.ctl.regwrite & ~dataW.is_bubble),
 		.wa(dataW.dst),
 		.wd(dataW.result)
 	);
@@ -103,7 +189,12 @@ module core
 		.clk, .reset,
 		.reset_ID_EX(dataH.reset_ID_EX),
 		.dataD_in(dataD),
-		.dataD_out(dataD_next)
+		.dataD_out(dataD_next),
+
+		.last_dataD(dataD_next),
+		// .copy_dataD(dataD_copy),
+
+		.Iwait, .Dwait
 	);
 
 	execute execute(
@@ -114,7 +205,12 @@ module core
 	pipereg_EX_MEM pipereg_EX_MEM(
 		.clk, .reset,
 		.dataE_in(dataE),
-		.dataE_out(dataE_next)
+		.dataE_out(dataE_next),
+
+		.last_dataE(dataE_next), .last_dataE_input(dataE_copy),
+		.copy_dataE(dataE_copy),
+
+		.Iwait, .Dwait
 	);
 
 	memory memory(
@@ -127,7 +223,12 @@ module core
 	pipereg_MEM_WB pipereg_MEM_WB(
 		.clk, .reset,
 		.dataM_in(dataM),
-		.dataM_out(dataM_next)
+		.dataM_out(dataM_next),
+
+		.last_dataM(dataM_next),
+		// .copy_dataM(dataM_copy),
+
+		.Iwait, .Dwait
 	);
 
 	writeback writeback(
@@ -144,7 +245,12 @@ module core
 		.offset_in(offset),
 		.op,
 
-		.dataH
+		.dataH,
+		.Iwait, .Dwait,
+		.is_bubbleE(dataE.is_bubble),
+		.is_bubbleM(dataM.is_bubble),
+		.is_bubbleW(dataW.is_bubble),
+		.is_bubble(dataD.is_bubble)
 	);
 
 `ifdef VERILATOR
@@ -155,7 +261,7 @@ module core
 		.valid              (~dataW.is_bubble),
 		.pc                 (dataW.pc),
 		.instr              (0),
-		.skip               (dataW.ctl.memwrite),
+		.skip               (dataW.ctl.memwrite & ~dataW.memory_address[31]),
 		.isRVC              (0),
 		.scFailed           (0),
 		.wen                (dataW.ctl.regwrite),

@@ -15,22 +15,32 @@ module alu
 	input alufunc_t alufunc,
 	output u64 c
 );
+	u32 e;
 	always_comb begin
 		c = '0;
+		e = '0;
 		unique case(alufunc)
 		
-			ALU_DIRECT: c = a;
-			ALU_ADD: c = a + b;
-			ALU_SUB: c = a - b;
-			ALU_AND: c = a & b;
-			ALU_OR: c = a | b;
-			ALU_XOR: c = a ^ b;
+			ALU_DIRECT: begin c = a; e='0; end
+			ALU_ADD: begin c = a + b; e='0; end
+			ALU_SUB: begin c = a - b; e='0; end
+			ALU_AND: begin c = a & b; e='0; end
+			ALU_OR: begin c = a | b; e='0; end
+			ALU_XOR: begin c = a ^ b; e='0; end
 
-			ALU_SSMALL: c = {63'b0,  $signed(a) < $signed(b) };
-			ALU_USMALL: c = {63'b0,  a < b };
-			ALU_LEFT: c = a << b;
-			ALU_URIGHT: c = a >> b;
-			ALU_SRIGHT: c = $signed(a) >>> b;
+			ALU_SSMALL: begin c = {63'b0,  $signed(a) < $signed(b) }; e='0; end
+			ALU_USMALL: begin c = {63'b0,  a < b }; e='0; end
+			ALU_LEFT: begin c = a << b[5:0]; e='0; end
+			ALU_URIGHT: begin c = a >> b[5:0]; e='0; end
+			ALU_SRIGHT: begin c = $signed(a) >>> b[5:0]; e='0; end
+			ALU_URIGHT_32: begin
+				e = a[31:0] >> b[5:0];
+				c = {{32{e[31]}}, e };
+			end
+			ALU_SRIGHT_32: begin
+				e = $signed(a[31:0]) >>> b[5:0];
+				c = {{32{e[31]}}, e };
+			end
 			default: begin
 				
 			end

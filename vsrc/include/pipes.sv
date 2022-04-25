@@ -1,7 +1,7 @@
 `ifndef __PIPES_SV
 `define __PIPES_SV
 
-`ifndef VERILATOR
+`ifdef VERILATOR
 `include "include/common.sv"
 `endif
 package pipes;
@@ -70,6 +70,15 @@ parameter F7_1_SUBW = 7'b0100000;
 parameter F7_1_SRLW = 7'b0000000;
 parameter F7_1_SRAW = 7'b0100000;
 parameter F7_1_SLLW = 7'b0000000;
+parameter F3_LB = 3'b000;
+parameter F3_LH = 3'b001;
+parameter F3_LW = 3'b010;
+parameter F3_LBU = 3'b100;
+parameter F3_LHU = 3'b101;
+parameter F3_LWU = 3'b110;
+parameter F3_SB = 3'b000;
+parameter F3_SH = 3'b001;
+parameter F3_SW = 3'b010;
 
 
 
@@ -80,7 +89,7 @@ typedef struct packed {
 	u1 is_bubble;
 } fetch_data_t;
 
-typedef enum logic[5:0] { 
+typedef enum logic[6:0] { 
 	UNKNOWN, ADDI, XORI, ORI, ANDI, 
 	LUI, JAL, BEQ, LD, SD,
 	ADD, SUB, AND, OR,
@@ -90,15 +99,19 @@ typedef enum logic[5:0] {
 	SLTI, SLTIU, SLLI, SRLI, SRAI,
 	SLL, SLT, SLTU, SRL, SRA,
 	ADDIW, SLLIW, SRLIW, SRAIW,
-	ADDW, SUBW, SLLW, SRLW, SRAW
+	ADDW, SUBW, SLLW, SRLW, SRAW,
+
+	LB, LH, LW, LBU, LHU, LWU, 
+	SB, SH, SW
  } decode_op_t;
 
-typedef enum logic [4:0] {
+typedef enum logic [6:0] {
 	ALU_UNKNOWN, ALU_DIRECT, ALU_PASS,
 	ALU_ADD, ALU_SUB, ALU_AND, ALU_OR,
 	ALU_XOR,
 	ALU_SSMALL, ALU_USMALL, ALU_LEFT, 
-	ALU_URIGHT, ALU_SRIGHT
+	ALU_URIGHT, ALU_SRIGHT,
+	ALU_URIGHT_32, ALU_SRIGHT_32
 } alufunc_t;
 
 typedef enum logic [4:0] {
@@ -110,7 +123,8 @@ typedef enum logic [1:0] {
 } reset_t;
 
 typedef enum logic [1:0] {
-	INSTR_CONTINUE, INSTR_MAINTAIN
+	INSTR_CONTINUE, INSTR_MAINTAIN, 
+	INSTR_CONTINUE_BUT_BUBBLE
 } instr_FETCH_t;
 
 typedef struct packed {

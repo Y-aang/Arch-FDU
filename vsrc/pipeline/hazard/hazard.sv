@@ -19,7 +19,10 @@ module hazard
         input u64 offset_in,
         input instfunc_t op,
 
-        output hazard_data_t dataH
+        output hazard_data_t dataH,
+
+        input logic Iwait, Dwait,
+        input logic is_bubbleE, is_bubbleM, is_bubbleW, is_bubble
 );
     assign dataH.pc_out = pc_in;
     // assign dataH.offset_out = offset_in;
@@ -27,7 +30,7 @@ module hazard
     always_comb begin
         unique case(ctl.op)
             JALR:begin
-                dataH.offset_out = (rd1 + offset_in) &~ 1'b1;   
+                dataH.offset_out = (rd1 + offset_in) &~ 1;   
             end
             default:begin
                 dataH.offset_out = offset_in;
@@ -36,15 +39,23 @@ module hazard
     end
 
     always_comb begin
+    //单个操作数
         if(ctl.op == ADDI || ctl.op == XORI || 
             ctl.op == ORI || ctl.op == ANDI || 
             ctl.op == LD  || ctl.op == SLTI ||
             ctl.op == SLTIU  || ctl.op == SLLI ||
             ctl.op == SRLI  || ctl.op == SRAI ||
             ctl.op == ADDIW  || ctl.op == SLLIW ||
-            ctl.op == SRLIW  || ctl.op == SRAIW )
+            ctl.op == SRLIW  || ctl.op == SRAIW ||
+            ctl.op == LB  || ctl.op == LH ||
+            ctl.op == LW  || ctl.op == LBU ||
+            ctl.op == LHU  || ctl.op == LWU )
         begin
-            if( (ra1 == dataE_dst || ra1 == dataM_dst || ra1 == dataW_dst) && ra1 != 5'b00000)
+            if( is_bubble ==0 && 
+                ( ( (is_bubbleE ==0 && ra1 == dataE_dst) 
+                    || (is_bubbleM ==0 &&ra1 == dataM_dst)
+                    || (is_bubbleW ==0 && ra1 == dataW_dst) )
+                && ra1 != 5'b00000) )
             begin
                 dataH.reset_IF_ID = RESET_CONTINUE;
                 dataH.reset_ID_EX = RESET_RESET;
@@ -60,6 +71,7 @@ module hazard
                 dataH.instfunc = PLUS4;
             end
         end
+    //两个操作数
         else if(ctl.op == ADD || ctl.op == XOR || 
                 ctl.op == OR || ctl.op == AND || 
                 ctl.op == SUB || ctl.op == SD ||
@@ -67,9 +79,18 @@ module hazard
                 ctl.op == SLTU || ctl.op == SRL || 
                 ctl.op == SRAIW || ctl.op == ADDW ||
                 ctl.op == SUBW || ctl.op == SLLW ||
-                ctl.op == SRLW || ctl.op == SRAW)
+                ctl.op == SRLW || ctl.op == SRAW || 
+                ctl.op == SB || ctl.op == SH ||
+                ctl.op == SW ||ctl.op == SRA )
         begin
-            if( (ra1 != 5'b00000 && (ra1 == dataE_dst || ra1 == dataM_dst || ra1 == dataW_dst)) || (ra2 != 5'b00000 && (ra2 == dataE_dst || ra2 == dataM_dst || ra2 == dataW_dst)) )
+            if( is_bubble ==0 && ( (ra1 != 5'b00000 && 
+                    ( (is_bubbleE ==0 &&ra1 == dataE_dst)
+                     || (is_bubbleM ==0 &&ra1 == dataM_dst)
+                     || (is_bubbleW ==0 &&ra1 == dataW_dst) )) 
+                || (ra2 != 5'b00000 && 
+                    ((is_bubbleE ==0 &&ra2 == dataE_dst)
+                     || (is_bubbleM ==0 &&ra2 == dataM_dst) 
+                     || (is_bubbleW ==0 &&ra2 == dataW_dst) )) ) )
             begin
                 dataH.reset_IF_ID = RESET_CONTINUE;
                 dataH.reset_ID_EX = RESET_RESET;
@@ -85,12 +106,19 @@ module hazard
                 dataH.instfunc = PLUS4;
             end
         end
+    //分支
         else if(ctl.op == BEQ || ctl.op == BNE ||
                 ctl.op == BLT || ctl.op == BGE ||
                 ctl.op == BLTU || ctl.op == BGEU )
-        begin
-            if( (ra1 != 5'b00000 && (ra1 == dataE_dst || ra1 == dataM_dst || ra1 == dataW_dst)) 
-                || (ra2 != 5'b00000 && (ra2 == dataE_dst || ra2 == dataM_dst || ra2 == dataW_dst)) )
+        begin//数据冒险
+            if( (ra1 != 5'b00000 && 
+                ( (is_bubbleE ==0 && ra1 == dataE_dst) || 
+                (is_bubbleM ==0 && ra1 == dataM_dst )|| 
+                (is_bubbleW ==0 && ra1 == dataW_dst) )) 
+                || (ra2 != 5'b00000 && 
+                ( (is_bubbleE ==0 && ra2 == dataE_dst) || 
+                (is_bubbleM ==0 && ra2 == dataM_dst) || 
+                (is_bubbleW ==0 && ra2 == dataW_dst) )) )
             begin
                 dataH.reset_IF_ID = RESET_CONTINUE;
                 dataH.reset_ID_EX = RESET_RESET;
@@ -99,14 +127,15 @@ module hazard
                 dataH.instfunc = MAINTAIN;
             end
             else begin
-                dataH.reset_IF_ID = RESET_RESET;
+                dataH.reset_IF_ID = RESET_CONTINUE;
                 dataH.reset_ID_EX = RESET_CONTINUE;
-                dataH.instr_FETCH = INSTR_MAINTAIN;
+                dataH.instr_FETCH = INSTR_CONTINUE;
                 dataH.ireq_valid = 1'b1;
                 dataH.instfunc = op;
             end
         end
-        else if(ctl.op == JAL)
+    //跳转
+        else if(is_bubble ==0 && ctl.op == JAL)
         begin
             dataH.reset_IF_ID = RESET_RESET;
             dataH.reset_ID_EX = RESET_CONTINUE;
@@ -114,9 +143,11 @@ module hazard
             dataH.ireq_valid = 1'b1;
             dataH.instfunc = op;
         end
-        else if(ctl.op == JALR)
+        else if(is_bubble ==0 && ctl.op == JALR)
         begin
-            if( (ra1 == dataE_dst || ra1 == dataM_dst || ra1 == dataW_dst) && ra1 != 5'b00000)
+            if( ( (is_bubbleM ==0 && ra1 == dataE_dst)
+             || (is_bubbleM ==0 && ra1 == dataM_dst) 
+             || (is_bubbleM ==0 && ra1 == dataW_dst) ) && ra1 != 5'b00000)
             begin
                 dataH.reset_IF_ID = RESET_CONTINUE;
                 dataH.reset_ID_EX = RESET_RESET;
@@ -125,9 +156,9 @@ module hazard
                 dataH.instfunc = MAINTAIN;
             end
             else begin
-                dataH.reset_IF_ID = RESET_RESET;
+                dataH.reset_IF_ID = RESET_CONTINUE;
                 dataH.reset_ID_EX = RESET_CONTINUE;
-                dataH.instr_FETCH = INSTR_MAINTAIN;
+                dataH.instr_FETCH = INSTR_CONTINUE;
                 dataH.ireq_valid = 1'b1;
                 dataH.instfunc = JALR_P;
             end

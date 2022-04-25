@@ -19,8 +19,21 @@ module decode
     input word_t rd1, rd2,
 
     output instfunc_t op,
-    output u64 offset
+    output u64 offset,
+
+    output logic is_jump
 );
+//取ivalid
+    always_comb begin
+        if(dataF.is_bubble ==0 && 
+        (op == BEQ_P || op == JAL_P) ) begin
+            is_jump = 1'b1;
+        end
+        else begin
+            is_jump = 1'b0; 
+        end
+    end
+
     control_t ctl;
     decoder decoder(
         .raw_instr(dataF.raw_instr),
@@ -138,7 +151,34 @@ module decode
             LD: begin
                 dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
             end
+            LB: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
+            end
+            LH: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
+            end
+            LW: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
+            end
+            LBU: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
+            end
+            LHU: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
+            end
+            LWU: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
+            end
             SD: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:25], dataF.raw_instr[11:7] };
+            end
+            SB: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:25], dataF.raw_instr[11:7] };
+            end
+            SH: begin
+                dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:25], dataF.raw_instr[11:7] };
+            end
+            SW: begin
                 dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:25], dataF.raw_instr[11:7] };
             end
             default: begin
