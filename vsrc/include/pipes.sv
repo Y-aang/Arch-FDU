@@ -80,7 +80,19 @@ parameter F3_SB = 3'b000;
 parameter F3_SH = 3'b001;
 parameter F3_SW = 3'b010;
 
-
+parameter F7_1_MUL = 7'b0000001;
+parameter F7_1_DIV = 7'b0000001;
+parameter F7_1_DIVU = 7'b0000001;
+parameter F7_1_REM = 7'b0000001;
+parameter F7_1_REMU = 7'b0000001;
+parameter F7_1_MULW = 7'b0000001;
+parameter F3_DIVW = 3'b100;
+parameter F7_1_DIVW = 7'b0000001;
+parameter F7_1_DIVUW = 7'b0000001;
+parameter F3_REMW = 3'b110;
+parameter F7_1_REMW = 7'b0000001;
+parameter F3_REMUW = 3'b111;
+parameter F7_1_REMUW = 7'b0000001;
 
 /* Define pipeline structures here */
 typedef struct packed {
@@ -102,7 +114,10 @@ typedef enum logic[6:0] {
 	ADDW, SUBW, SLLW, SRLW, SRAW,
 
 	LB, LH, LW, LBU, LHU, LWU, 
-	SB, SH, SW
+	SB, SH, SW,
+
+	MUL, DIV, DIVU, REM, REMU,
+	MULW, DIVW, DIVUW, REMW, REMUW
  } decode_op_t;
 
 typedef enum logic [6:0] {
@@ -150,6 +165,7 @@ typedef struct packed {
 	creg_addr_t dst;
 	word_t memory_address;
 	u1 is_bubble;
+	u1 is_waiting;
 } execute_data_t;
 
 typedef struct packed {

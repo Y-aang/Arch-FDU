@@ -22,7 +22,8 @@ module pipereg_IF_ID
         input fetch_data_t last_dataF_D,
 
         input logic Iwait, Dwait, ireq_valid, iresp_data_ok,
-        input instfunc_t op
+        input instfunc_t op,
+        input u1 exe_is_waiting
 );
     logic my_reset;
     always_comb begin
@@ -43,16 +44,11 @@ module pipereg_IF_ID
     always_ff @ (posedge clk)
     begin
         copy_dataF <= dataF_in;
-        if( Iwait || Dwait )begin
+        if( Iwait || Dwait || exe_is_waiting == 1'b1 )begin
             dataF_out.raw_instr <= last_dataF_D.raw_instr;
             dataF_out.pc <= last_dataF_D.pc;
             dataF_out.is_bubble <= 1'b1;
         end
-        // else if( Iwait && op == BEQ_P)begin
-        //     dataF_out.raw_instr <= last_dataF_D.raw_instr;
-        //     dataF_out.pc <= last_dataF_D.pc;
-        //     dataF_out.is_bubble <= 1'b1;
-        // end
         else if( ireq_valid == 0 && last_dataF_D.raw_instr != 0000_0000)begin
             dataF_out.raw_instr <= last_dataF_D.raw_instr;
             dataF_out.pc <= last_dataF_D.pc;
@@ -63,14 +59,6 @@ module pipereg_IF_ID
             dataF_out.pc <= last_dataF.pc;
             dataF_out.is_bubble <= 1'b1;
         end
-        // else if( Dwait )begin
-        //     dataF_out<= last_dataF_D;
-        // end
-        // else if(  op == BEQ_P && (Iwait || ireq_valid == 0) )begin
-        //     dataF_out.raw_instr <= last_dataF_D.raw_instr;
-        //     dataF_out.pc <= last_dataF_D.pc;
-        //     dataF_out.is_bubble <= 1'b1;
-        // end
         else if(reset || my_reset  ) begin    
             dataF_out.raw_instr <= last_dataF.raw_instr;
             dataF_out.pc <= last_dataF.pc;

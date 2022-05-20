@@ -240,6 +240,12 @@ module decoder
                                 ctl.alufunc = ALU_SUB;
                                 ctl.memwrite = 1'b0;
                           end
+                          F7_1_MUL:begin
+                                ctl.op = MUL;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                          end
                           default:begin
                               
                           end
@@ -251,6 +257,12 @@ module decoder
                                 ctl.op = AND;
                                 ctl.regwrite = 1'b1;
                                 ctl.alufunc = ALU_AND;
+                                ctl.memwrite = 1'b0;
+                          end
+                          F7_1_REMU:begin
+                                ctl.op = REMU;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
                                 ctl.memwrite = 1'b0;
                           end
                           default:begin
@@ -266,6 +278,12 @@ module decoder
                                 ctl.alufunc = ALU_OR;
                                 ctl.memwrite = 1'b0;
                           end
+                          F7_1_REM:begin
+                                ctl.op = REM;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                          end
                           default:begin
                               
                           end
@@ -277,6 +295,12 @@ module decoder
                                 ctl.op = XOR;
                                 ctl.regwrite = 1'b1;
                                 ctl.alufunc = ALU_XOR;
+                                ctl.memwrite = 1'b0;
+                          end
+                          F7_1_DIV:begin
+                                ctl.op = DIV;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
                                 ctl.memwrite = 1'b0;
                           end
                           default:begin
@@ -335,6 +359,12 @@ module decoder
                                 ctl.op = SRA;
                                 ctl.regwrite = 1'b1;
                                 ctl.alufunc = ALU_SRIGHT;
+                                ctl.memwrite = 1'b0;
+                          end
+                          F7_1_DIVU:begin
+                                ctl.op = DIVU;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
                                 ctl.memwrite = 1'b0;
                           end
                           default:begin
@@ -433,6 +463,12 @@ module decoder
                                 ctl.alufunc = ALU_SUB;
                                 ctl.memwrite = 1'b0;
                             end
+                            F7_1_MULW:begin
+                                ctl.op = MULW;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                            end
                             default:begin
                                 
                             end
@@ -463,6 +499,51 @@ module decoder
                                 ctl.op = SRAW;
                                 ctl.regwrite = 1'b1;
                                 ctl.alufunc = ALU_SRIGHT_32;
+                                ctl.memwrite = 1'b0;
+                            end
+                            F7_1_DIVUW:begin
+                                ctl.op = DIVUW;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                            end
+                            default:begin
+                                
+                            end
+                        endcase
+                    end
+                    F3_DIVW:begin
+                        unique case(f7_1)
+                            F7_1_DIVW:begin
+                                ctl.op = DIVW;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                            end
+                            default:begin
+                                
+                            end
+                        endcase
+                    end
+                    F3_REMW:begin
+                        unique case(f7_1)
+                            F7_1_REMW:begin
+                                ctl.op = REMW;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                            end
+                            default:begin
+                                
+                            end
+                        endcase
+                    end
+                    F3_REMUW:begin
+                        unique case(f7_1)
+                            F7_1_REMUW:begin
+                                ctl.op = REMUW;
+                                ctl.regwrite = 1'b1;
+                                ctl.alufunc = ALU_UNKNOWN;
                                 ctl.memwrite = 1'b0;
                             end
                             default:begin

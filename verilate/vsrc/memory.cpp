@@ -120,6 +120,7 @@ auto BlockMemory::load(addr_t addr) -> word_t
 {
 	addr_t caddr = addr;
 	addr -= _offset;
+	// printf("addr=%llx \n", addr);//添加的
 	asserts(addr < _size, "addr=0x%016x out of range", addr);
 
 	size_t index = addr / 8;  // align to 4 bytes
@@ -134,6 +135,7 @@ void BlockMemory::store(addr_t addr, word_t data, word_t mask)
 {
 	addr_t caddr = addr;
 	addr -= _offset;
+	// printf("addr=%llx ", addr );printf("_size=%llx \n", _size );
 	asserts(addr < _size, "addr=0x%016x out of range", addr);
 
 	size_t index = addr / 8;  // align to 8 bytes

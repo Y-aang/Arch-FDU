@@ -162,7 +162,8 @@ module core
 
 		.Iwait, .Dwait, .ireq_valid(ireq.valid),
 		.iresp_data_ok(iresp.data_ok),
-		.op
+		.op,
+		.exe_is_waiting(dataE.is_waiting)
 	);
 
 //decode
@@ -194,10 +195,12 @@ module core
 		.last_dataD(dataD_next),
 		// .copy_dataD(dataD_copy),
 
-		.Iwait, .Dwait
+		.Iwait, .Dwait,
+		.exe_is_waiting(dataE.is_waiting)
 	);
 
 	execute execute(
+		.clk, .reset,
 		.dataD(dataD_next),
 		.dataE
 	);

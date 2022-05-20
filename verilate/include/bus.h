@@ -578,7 +578,7 @@ public:
 			ADDR_OK = 1,
 			DATA_OK = 2,
 		};
-
+		
 		uint32_t remain = 0;
 		if (WaitDataOk)
 			remain |= DATA_OK;
@@ -587,12 +587,10 @@ public:
 
 		if (EvalFirst)
 			top->eval();
-
 		uint64_t count = 0;
 		while (count < max_count) {
 			word_t data = rdata();
 			uint32_t acked = scope->dbus_handshake(ports.resp, remain);
-
 			count++;
 			top->tick();
 
@@ -602,12 +600,10 @@ public:
 			remain ^= acked;
 			if (remain == 0)
 				return data;
-
 			if (count % (32 * 1024 * 1024) == 0) {
 				warn(YELLOW "[Warning]" RESET " DBus 0x%llx cycles but no response, please check data_ok in waveform\n", count);
 			}
 		}
-
 		panic("await timeout: no response from DBus in %llu cycle(s)", max_count);
 	}
 

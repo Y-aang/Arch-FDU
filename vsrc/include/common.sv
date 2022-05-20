@@ -13,6 +13,7 @@ package common;
 	parameter logic[63:0] PCINIT = 64'h00000000_80000000;
 
 	// typedefs
+    typedef logic[128:0] u129;
 	typedef logic[127:0] u128;
 	typedef logic[63:0] u64;
 	typedef logic[43:0] u44;

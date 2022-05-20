@@ -27,8 +27,31 @@ private:
 	 *
 	 * NOTE: you can use BlockMemory, or replace it with anything you like.
 	 */
+
+	word_t buffer[16];
+
+	
+
+
+	// word_t data_array[8][2][16];
+	// struct meta_t
+	// {
+	// 	word_t valid;
+	// 	word_t dirty;
+	// 	word_t tag;
+	// }meta[8][2];
+	// word_t LRU[8][2];
 #endif
 
 	 // int state;
 	BlockMemory mem;
+
+	// word_t data[8][2][16];
+	// struct meta_t
+	// {
+	// 	word_t valid;
+	// 	word_t dirty;
+	// 	word_t tag;
+	// }meta[8][2];
+	// word_t LRU[8][2];
 };

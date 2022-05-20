@@ -87,14 +87,20 @@ WITH /*SKIP*/{
 	for (int S = 0; S < 16; S++) {
 		auto value = randi();  // equivalent to randi<word_t>, returns a 64 bit random unsigned integer.
 		dbus->store(0x100 + 8 * S, MSIZE8, S, value);
+		// printf("value=%llx \n", value);
 		auto mask1 = STROBE_TO_MASK[S & 0xf];
 		auto mask2 = STROBE_TO_MASK[((S) >> 4) & 0xf];
 		auto mask = (mask2 << 32) | mask1;
+		// printf("mask=%llx \n", mask);
 		a[S] = value & mask;  // STROBE_TO_MASK is defined in common.h
 	}
 
 	for (int i = 0; i < 16; i++) {
 		auto got = dbus->load(0x100 + 8 * i, MSIZE8);
+		// printf("got=%llx \n", got);
+		// printf("a[i]=%llx \n", a[i]);
+		// std::cout<<"got="<<got<<std::endl;
+		// std::cout<<"a[i]="<<a[i]<<std::endl;
 		ASSERT(got == a[i]);
 	}
 } AS("strobe");
@@ -294,12 +300,13 @@ constexpr size_t CMP_SCAN_SIZE = 32 * 1024;  // 32 KiB
 WITH CMP_TO(ref)
 {
 	for (size_t i = 0; i < CMP_SCAN_SIZE / 8; i++) {
-		dbus->stored(8 * i, randi<uint64_t>());
+		uint64_t tmp = randi<uint64_t>();
+		dbus->stored(8 * i, tmp);
 		dbus->loadd(8 * i);
 	}
 } AS("cmp: word");
 
-WITH CMP_TO(ref)
+WITH CMP_TO(ref) DEBUG TRACE
 {
 	for (size_t i = 0; i < CMP_SCAN_SIZE / 2; i++) {
 		dbus->storeh(2 * i, randi<uint16_t>());
