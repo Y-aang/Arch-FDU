@@ -45,6 +45,11 @@ module memory
 
     assign dataM.is_bubble = dataE.is_bubble;
     always_comb begin
+        dataM.pc = '0;
+        dataM.result = '0;
+        dataM.ctl = '0;
+        dataM.dst = '0;
+        dataM.memory_address = '0;
         unique case(dataE.ctl.op)
             SD:begin
                 dataM.pc = dataE.pc;

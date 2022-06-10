@@ -28,6 +28,7 @@ module hazard
     // assign dataH.offset_out = offset_in;
 
     always_comb begin
+        dataH.offset_out = '0;
         unique case(ctl.op)
             JALR:begin
                 dataH.offset_out = (rd1 + offset_in) &~ 1;   
@@ -39,6 +40,11 @@ module hazard
     end
 
     always_comb begin
+        dataH.reset_IF_ID = RESET_CONTINUE;
+        dataH.reset_ID_EX = RESET_RESET;
+        dataH.instr_FETCH = INSTR_MAINTAIN;
+        dataH.ireq_valid = 1'b0;
+        dataH.instfunc = MAINTAIN;
     //单个操作数
         if(ctl.op == ADDI || ctl.op == XORI || 
             ctl.op == ORI || ctl.op == ANDI || 
@@ -81,7 +87,12 @@ module hazard
                 ctl.op == SUBW || ctl.op == SLLW ||
                 ctl.op == SRLW || ctl.op == SRAW || 
                 ctl.op == SB || ctl.op == SH ||
-                ctl.op == SW ||ctl.op == SRA )
+                ctl.op == SW ||ctl.op == SRA ||
+                ctl.op == MUL || ctl.op == DIV ||
+                ctl.op == DIVU || ctl.op == REM ||
+                ctl.op == REMU || ctl.op == MULW ||
+                ctl.op == DIVW || ctl.op == DIVUW ||
+                ctl.op == REMW || ctl.op == REMUW)
         begin
             if( is_bubble ==0 && ( (ra1 != 5'b00000 && 
                     ( (is_bubbleE ==0 &&ra1 == dataE_dst)

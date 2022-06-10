@@ -24,11 +24,14 @@ module execute
     u64 multiply_result;
 	u1 multiply_done, divide_done;
     u1 is_multiply, is_divide;
+    u32 div_tmp;
 
     word_t alu_a, alu_b;
 
 //取ALU操作数
     always_comb begin
+        alu_a = '0;
+        alu_b = '0;
         unique case(dataD.ctl.op)
             ADDI:begin
                 alu_a = dataD.srca;
@@ -296,6 +299,10 @@ module execute
     end
 
     always_comb begin
+        is_multiply = '0;
+        is_divide = '0;
+        dataE.is_waiting = '0;
+        dataE.is_bubble = '0;
         if(dataD.pc != '0 &&//不知道有没有用的尝试
             dataD.is_bubble == 1'b0 &&( dataD.ctl.op == MUL || 
             dataD.ctl.op == MULW ))begin
@@ -355,6 +362,7 @@ module execute
 
 //写结果
     always_comb begin
+        dataE.result = '0;
         unique case(dataD.ctl.op)
             ADDIW:begin
                 dataE.result = { {32{result[31]}},result[31:0] };
@@ -434,7 +442,8 @@ module execute
                     dataE.result = {{32{divide_result[31]}}, divide_result[31:0]};
                 end
                 else begin
-                    dataE.result = {{32{{~divide_result[31:0] + {31'b0, 1'b1}}[31]}}, ~divide_result[31:0] + {31'b0, 1'b1}};
+                    // div_tmp = ~divide_result[31:0] + {31'b0, 1'b1};
+                    dataE.result = {{32{div_tmp[31]}}, ~divide_result[31:0] + {31'b0, 1'b1}};
                 end
             end
             DIVUW:begin
@@ -453,7 +462,8 @@ module execute
                     dataE.result = {{32{divide_result[95]}}, divide_result[95:64]};
                 end
                 else begin
-                    dataE.result = {{32{{~divide_result[95:64] + {31'b0, 1'b1}}[31]}}, ~divide_result[95:64] + {31'b0, 1'b1}};
+                    // div_tmp = ~divide_result[95:64] + {31'b0, 1'b1};
+                    dataE.result = {{32{div_tmp[31]}}, div_tmp};
                 end
             end
             REMUW:begin
@@ -476,6 +486,24 @@ module execute
         endcase
     end
 	
+//div_tmp
+
+    always_comb begin
+        div_tmp = '0;
+        unique case (dataD.ctl.op)
+            DIVW:begin
+                div_tmp = ~divide_result[31:0] + {31'b0, 1'b1};
+            end
+            REMW:begin
+                div_tmp = ~divide_result[95:64] + {31'b0, 1'b1};
+            end
+            default: begin
+                div_tmp = '0; 
+            end
+        endcase 
+    end
+
+
 endmodule
 
 `endif

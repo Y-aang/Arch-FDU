@@ -103,14 +103,14 @@ module core
 	u32 raw_instr;
 	// assign raw_instr=iresp.data;
 	always_comb begin
+		raw_instr = '0;
 		if(iresp.data_ok == 1)
 			raw_instr=iresp.data;
 		else
 			raw_instr='0;
 	end
 
-	assign Dwait = dreq.valid & (~dresp.data_ok);
-	assign Iwait = ireq.valid & (~iresp.data_ok);
+	
 
 	fetch_data_t dataF, dataF_next, dataF_copy;
 	decode_data_t dataD, dataD_next, dataD_copy;
@@ -126,7 +126,9 @@ module core
     u64 offset;
 
 	logic Dwait, Iwait, is_jump;
-
+	
+	assign Dwait = dreq.valid & (~dresp.data_ok);
+	assign Iwait = ireq.valid & (~iresp.data_ok);
 
 //fetch
 	pcselect pcselect(

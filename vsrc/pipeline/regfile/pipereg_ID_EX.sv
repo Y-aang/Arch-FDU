@@ -25,6 +25,7 @@ module pipereg_ID_EX
 );
     logic my_reset;
     always_comb begin
+        my_reset = '0;
         unique case(reset_ID_EX)
             RESET_CONTINUE:begin
                 my_reset =  1'b0;

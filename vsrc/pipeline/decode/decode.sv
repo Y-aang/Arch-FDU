@@ -25,6 +25,7 @@ module decode
 );
 //取ivalid
     always_comb begin
+        is_jump = '0;
         if(dataF.is_bubble ==0 && 
         (op == BEQ_P || op == JAL_P) ) begin
             is_jump = 1'b1;
@@ -50,6 +51,7 @@ module decode
     assign dataD.is_bubble = dataF.is_bubble;
 //取op
     always_comb begin
+        op = PLUS4;
         unique case(ctl.op)
         //分支类型
             BEQ:begin
@@ -112,6 +114,7 @@ module decode
 
 //imm扩展
     always_comb begin
+        dataD.immediate = '0;
         unique case(ctl.op)
             LUI:begin
                 dataD.immediate = {{32{dataF.raw_instr[31]}}, dataF.raw_instr[31:12], {12{1'b0}} };
@@ -136,6 +139,8 @@ module decode
     
 //取操作数地址
     always_comb begin
+        ra1 = '0;
+        ra2 = '0;
         unique case(ctl.op)
             
             default: begin
@@ -147,6 +152,7 @@ module decode
 
 //内存地址
     always_comb begin
+        dataD.memory_address = '0;
         unique case(ctl.op)
             LD: begin
                 dataD.memory_address = rd1 + {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20] };
@@ -189,6 +195,7 @@ module decode
     
 //取offset
     always_comb begin
+        offset = '0;
         unique case(ctl.op)
             BEQ:begin
                 offset = {{52{dataF.raw_instr[31]}}, dataF.raw_instr[7], dataF.raw_instr[30:25], dataF.raw_instr[11:8], 1'b0 };
@@ -222,6 +229,7 @@ module decode
     
 //取shamt
     always_comb begin
+        dataD.shamt = '0;
         unique case(ctl.op)
             
             default: begin

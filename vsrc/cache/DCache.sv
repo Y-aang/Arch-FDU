@@ -24,7 +24,7 @@ module DCache
 
     localparam WORDS_PER_LINE = 16;
     localparam ASSOCIATIVITY = 2;
-    localparam SET_NUM = 8;
+    localparam SET_NUM = 4;
     localparam OFFSET_BITS = $clog2(WORDS_PER_LINE);//4
     localparam INDEX_BITS = $clog2(SET_NUM);//3
     localparam TAG_BITS = 64 - INDEX_BITS - OFFSET_BITS - 3; /* Maybe 32, or
@@ -58,7 +58,7 @@ module DCache
         tag_t tag;
     } meta_t;
     typedef u1 LRU_t[SET_NUM-1:0][ASSOCIATIVITY-1:0];
-    typedef u10 index_counter_t;
+    typedef u7 index_counter_t;
 
 	/* TODO: Lab3 Cache */
 
@@ -78,27 +78,29 @@ module DCache
 
     always_ff @ (posedge clk)
     begin
-        if(reset)begin
-            counter <= '0;
-        end
-        else begin
-            counter <= counter + 1;
-        end
+         counter <= counter + 1;
     end
 
 //data_write
     always_comb begin
-        unique case(state)
-            EXCHANGE_2:begin
-                data_write = cresp.data;
-            end
-            WRITEBACK:begin
-                data_write = dreq.data;
-            end
-            default:begin
-                
-            end
-        endcase 
+        data_write = '0;
+        if(reset == 1)begin
+            data_write = '0; 
+        end
+        else begin
+            unique case(state)
+                EXCHANGE_2:begin
+                    data_write = cresp.data;
+                end
+                WRITEBACK:begin
+                    data_write = dreq.data;
+                end
+                default:begin
+                    
+                end
+            endcase 
+        end
+        
     end
 
 //state状态
@@ -122,7 +124,7 @@ module DCache
                         end
                     end
                     else if(meta_read.valid == 1 && 
-                            meta_read.tag == dreq.addr[63:10])begin//命中
+                            meta_read.tag == dreq.addr[63:9])begin//命中
                         state <= WRITEBACK;
                     end
                     else begin
@@ -231,36 +233,36 @@ module DCache
     always_ff @ (posedge clk)
     begin
         if(reset) begin
-            for (u4 i = 0; i != 4'b1000; i++) begin : LRU_SET
+            for (u4 i = 0; i != 4'b0100; i++) begin : LRU_SET
                 for (u2 j = 0; j != 2'b10 ; j++) begin : LRU_ASSOCIATIVITY
-                   LRU[i[2:0]][j[0]] <= j[0]; 
+                   LRU[i[1:0]][j[0]] <= j[0]; 
                 end : LRU_ASSOCIATIVITY   
             end : LRU_SET
         end
         else begin
             unique case(state)
             IDLE:begin
-                for (u4 i = 0; i != 4'b1000; i++) begin : LRU_SET
-                    if(LRU[i[2:0]][0] == '0 && LRU[i[2:0]][1] == '0)begin
-                        LRU[i[2:0]][0] <= '0;
-                        LRU[i[2:0]][1] <= '1;
+                for (u4 i = 0; i != 4'b0100; i++) begin : LRU_SET
+                    if(LRU[i[1:0]][0] == '0 && LRU[i[1:0]][1] == '0)begin
+                        LRU[i[1:0]][0] <= '0;
+                        LRU[i[1:0]][1] <= '1;
                     end
                 end : LRU_SET
             end
             FETCH:begin
                 if(meta_read.valid == 1 && 
-                meta_read.tag == dreq.addr[63:10])begin
-                    for (u4 i = 0; i != 4'b1000; i++) begin : LRU_SET
+                meta_read.tag == dreq.addr[63:9])begin
+                    for (u4 i = 0; i != 4'b0100; i++) begin : LRU_SET
                         for (u2 j = 0; j != 2'b10 ; j++) begin : LRU_ASSOCIATIVITY
-                            if(i[2:0] != get_index(dreq.addr) )begin
-                               LRU[i[2:0]][j[0]] <=LRU[i[2:0]][j[0]]; 
+                            if(i[1:0] != get_index(dreq.addr) )begin
+                               LRU[i[1:0]][j[0]] <=LRU[i[1:0]][j[0]]; 
                             end
                             else begin
                                 if(j[0]== age[0] )begin
-                                   LRU[i[2:0]][j[0]] <= '1; 
+                                   LRU[i[1:0]][j[0]] <= '1; 
                                 end
                                 else begin
-                                   LRU[i[2:0]][j[0]] <= '0; 
+                                   LRU[i[1:0]][j[0]] <= '0; 
                                 end
                             end
                         end : LRU_ASSOCIATIVITY   
@@ -269,29 +271,29 @@ module DCache
             end
                 EXCHANGE_2:begin
                     if (cresp.last == 1) begin
-                        for (u4 i = 0; i != 4'b1000; i++) begin : LRU_SET
+                        for (u4 i = 0; i != 4'b0100; i++) begin : LRU_SET
                             for (u2 j = 0; j != 2'b10 ; j++) begin : LRU_ASSOCIATIVITY
-                                if(i[2:0] != get_index(dreq.addr) )begin
-                                   LRU[i[2:0]][j[0]] <=LRU[i[2:0]][j[0]]; 
+                                if(i[1:0] != get_index(dreq.addr) )begin
+                                   LRU[i[1:0]][j[0]] <=LRU[i[1:0]][j[0]]; 
                                 end
                                 else begin
-                                   LRU[i[2:0]][j[0]] <= ~LRU[i[2:0]][j[0]]; 
+                                   LRU[i[1:0]][j[0]] <= ~LRU[i[1:0]][j[0]]; 
                                 end
                             end : LRU_ASSOCIATIVITY   
                         end : LRU_SET
                     end
                     else begin
-                        for (u4 i = 0; i != 4'b1000; i++) begin : LRU_SET
+                        for (u4 i = 0; i != 4'b0100; i++) begin : LRU_SET
                             for (u2 j = 0; j != 2'b10 ; j++) begin : LRU_ASSOCIATIVITY
-                               LRU[i[2:0]][j[0]] <=LRU[i[2:0]][j[0]]; 
+                               LRU[i[1:0]][j[0]] <=LRU[i[1:0]][j[0]]; 
                             end : LRU_ASSOCIATIVITY   
                         end : LRU_SET
                     end
                 end
                 default:begin
-                    for (u4 i = 0; i != 4'b1000; i++) begin : LRU_SET
+                    for (u4 i = 0; i != 4'b0100; i++) begin : LRU_SET
                         for (u2 j = 0; j != 2'b10 ; j++) begin : LRU_ASSOCIATIVITY
-                           LRU[i[2:0]][j[0]] <=LRU[i[2:0]][j[0]]; 
+                           LRU[i[1:0]][j[0]] <=LRU[i[1:0]][j[0]]; 
                         end : LRU_ASSOCIATIVITY   
                     end : LRU_SET
                 end
@@ -300,6 +302,7 @@ module DCache
     end
 //选择替换的行号 输出上次没被用的
     always_comb begin
+        LRU_result = '0;
         if(LRU[get_index(dreq.addr)][0] == 0)begin
             LRU_result = '0;
         end
@@ -309,6 +312,7 @@ module DCache
     end
 
     always_comb begin
+        row_num = '0;
         unique case (state)
             FETCH:begin
                 if(age > ASSOCIATIVITY - 1) begin
@@ -335,16 +339,11 @@ module DCache
 
 //状态机 creq dresp
     always_comb begin
+        creq = '0;
+        dresp = '0;
         unique case(state)
             WRITEBACK:begin
-                creq.valid = '0;
-                creq.is_write = '0;
-                creq.addr = '0;
-                creq.size = '0;
-                creq.data = '0;
-                creq.len = '0;
-                creq.burst = '0;
-                creq.strobe = '0;
+                creq = '0;
 
                 dresp.addr_ok = '1;
                 dresp.data_ok = '1;
@@ -379,28 +378,37 @@ module DCache
                 dresp.data = '0;
             end
             BURST:begin
-                creq.valid = '1;
-                creq.is_write = '0;
-                creq.addr = dreq.addr;
-                creq.size = dreq.size;
-                creq.data = dreq.data;
-                creq.len = MLEN1;
-                creq.burst = AXI_BURST_FIXED;
-                creq.strobe = dreq.strobe;
+                if(dreq.strobe == '0) begin//is read
+                    creq.valid = '1;
+                    creq.is_write = '0;
+                    creq.addr = dreq.addr;
+                    creq.size = dreq.size;
+                    creq.data = dreq.data;
+                    creq.len = MLEN1;
+                    creq.burst = AXI_BURST_FIXED;
+                    creq.strobe = dreq.strobe;
 
-                dresp.addr_ok = '1;
-                dresp.data_ok = cresp.last;
-                dresp.data = cresp.data;
+                    dresp.addr_ok = '1;
+                    dresp.data_ok = cresp.last;
+                    dresp.data = cresp.data;
+                end
+                else begin
+                    creq.valid = '1;
+                    creq.is_write = '1;
+                    creq.addr = dreq.addr;
+                    creq.size = dreq.size;
+                    creq.data = dreq.data;
+                    creq.len = MLEN1;
+                    creq.burst = AXI_BURST_FIXED;
+                    creq.strobe = dreq.strobe;
+
+                    dresp.addr_ok = '1;
+                    dresp.data_ok = cresp.last;
+                    dresp.data = cresp.data;
+                end
             end
             default:begin
-                creq.valid = '0;
-                creq.is_write = '0;
-                creq.addr = '0;
-                creq.size = '0;
-                creq.data = '0;
-                creq.len = '0;
-                creq.burst = '0;
-                creq.strobe = '0;
+                creq = '0;
 
                 dresp.addr_ok = '0;
                 dresp.data_ok = '0;
@@ -410,22 +418,28 @@ module DCache
     end
 //data_strobe
     always_comb begin
-        unique case (state)
-            EXCHANGE_2: begin
-                if(cresp.ready == 1)begin
-                    data_strobe = '1;
+        data_strobe = '0;
+        if(reset == 1)begin
+            data_strobe = '1;
+        end
+        else begin
+            unique case (state)
+                EXCHANGE_2: begin
+                    if(cresp.ready == 1)begin
+                        data_strobe = '1;
+                    end
+                    else begin
+                        data_strobe = '0;
+                    end
                 end
-                else begin
+                WRITEBACK:begin
+                    data_strobe = dreq.strobe; 
+                end
+                default: begin
                     data_strobe = '0;
                 end
-            end
-            WRITEBACK:begin
-                data_strobe = dreq.strobe; 
-            end
-            default: begin
-                data_strobe = '0;
-            end
-        endcase 
+            endcase 
+        end
     end
 //offset_counter 偏移计数器
     always_ff @ (posedge clk)begin
@@ -464,6 +478,7 @@ module DCache
     end
     //确认data_offset
     always_comb begin
+        data_offset = '0;
         unique case(state)
             EXCHANGE_1:begin
                 data_offset = offset_counter; 
@@ -478,10 +493,15 @@ module DCache
     end
 
 //meta管理
+    u3 meta_addr;
     always_comb begin
+        meta_strobe = '0;
+        meta_write = '0;
+        meta_addr =  '0;
         if(reset)begin
             meta_strobe = '1;
             meta_write = '0;
+            meta_addr =  counter[6:4];
         end
         else begin
             unique case(state)
@@ -490,7 +510,8 @@ module DCache
                         meta_strobe = '1;
                         meta_write.valid = '1;
                         meta_write.dirty = '0;
-                        meta_write.tag = dreq.addr[63:10];
+                        meta_write.tag = dreq.addr[63:9];
+                        meta_addr =  {get_index(dreq.addr), row_num};
                     end
                 end
                 WRITEBACK:begin
@@ -498,25 +519,36 @@ module DCache
                         meta_strobe = '1;
                         meta_write.valid = '1;
                         meta_write.dirty = '1;
-                        meta_write.tag = dreq.addr[63:10];
+                        meta_write.tag = dreq.addr[63:9];
+                        meta_addr =  {get_index(dreq.addr), row_num};
                     end
                     else begin
                         meta_strobe = '0;
                         meta_write.valid = '0;
                         meta_write.dirty = '0;
                         meta_write.tag = '0;
+                        meta_addr =  {get_index(dreq.addr), row_num};
                     end
                 end
                 default:begin
                     meta_strobe = '0;
                     meta_write = '0;
+                    meta_addr =  {get_index(dreq.addr), row_num};
                 end
             endcase
         end
     end
 
-    u8 data_addr;
-    assign data_addr =  {get_index(dreq.addr), row_num, data_offset};
+    u7 data_addr;
+    always_comb begin
+        data_addr = '0;
+        if(reset == 1 )begin
+            data_addr = counter;
+        end
+        else begin
+            data_addr =  {get_index(dreq.addr), row_num, data_offset};
+        end 
+    end
     RAM_SinglePort #(
         .ADDR_WIDTH($clog2(SET_NUM * ASSOCIATIVITY * WORDS_PER_LINE)),//8
         .DATA_WIDTH(64),
@@ -530,8 +562,8 @@ module DCache
         .wdata(data_write),
         .rdata(data_read)
     );
-    u4 meta_addr;
-    assign meta_addr =  {get_index(dreq.addr), row_num};
+    // u4 meta_addr;
+    // assign meta_addr =  {get_index(dreq.addr), row_num};
     RAM_SinglePort #(
         .ADDR_WIDTH($clog2(SET_NUM * ASSOCIATIVITY)),//4
         .DATA_WIDTH($bits(meta_t)),//44

@@ -21,6 +21,7 @@ module pcselect
     input logic Iwait, Dwait, ireq_valid, is_bubble
 );
     always_comb begin
+        pc_selected = '0;
         if(Iwait  || Dwait || is_bubble) begin
             pc_selected = pc;
         end
