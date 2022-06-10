@@ -25,7 +25,8 @@ module core
 	output ibus_req_t  ireq,
 	input  ibus_resp_t iresp,
 	output dbus_req_t  dreq,
-	input  dbus_resp_t dresp
+	input  dbus_resp_t dresp,
+	input logic trint, swint, exint
 );
 	// always_ff @(posedge clk) begin
 	// 	if (dataW.is_bubble == 0) begin
@@ -326,7 +327,7 @@ module core
 		.coreid             (0),
 		.priviledgeMode     (3),
 		.mstatus            (0),
-		.sstatus            (0),
+		.sstatus            (0 /* mstatus & 64'h800000030001e000 */),
 		.mepc               (0),
 		.sepc               (0),
 		.mtval              (0),
