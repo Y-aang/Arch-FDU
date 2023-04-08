@@ -556,6 +556,68 @@ module decoder
                     end
                 endcase
             end
+            F7_CSRRW:begin
+                 unique case(f3)
+                    F3_CSRRW:begin
+                        ctl.op = CSRRW;
+                        ctl.regwrite = 1'b1;
+                        ctl.alufunc = ALU_DIRECT;
+                        ctl.memwrite = 1'b0;
+                    end
+                    F3_CSRRS:begin
+                        ctl.op = CSRRS;
+                        ctl.regwrite = 1'b1;
+                        ctl.alufunc = ALU_OR;
+                        ctl.memwrite = 1'b0;
+                    end
+                    F3_CSRRC:begin
+                        ctl.op = CSRRC;
+                        ctl.regwrite = 1'b1;
+                        ctl.alufunc = ALU_AND;
+                        ctl.memwrite = 1'b0;
+                    end
+                    F3_CSRRWI:begin
+                        ctl.op = CSRRWI;
+                        ctl.regwrite = 1'b1;
+                        ctl.alufunc = ALU_DIRECT;
+                        ctl.memwrite = 1'b0;
+                    end
+                    F3_CSRRSI:begin
+                        ctl.op = CSRRSI;
+                        ctl.regwrite = 1'b1;
+                        ctl.alufunc = ALU_OR;
+                        ctl.memwrite = 1'b0;
+                    end
+                    F3_CSRRCI:begin
+                        ctl.op = CSRRCI;
+                        ctl.regwrite = 1'b1;
+                        ctl.alufunc = ALU_AND;
+                        ctl.memwrite = 1'b0;
+                    end
+                    F3_MRET:begin
+                        unique case(raw_instr)
+                            F32_MRET:begin
+                                ctl.op = MRET;
+                                ctl.regwrite = 1'b0;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                            end 
+                            F32_ECALL:begin
+                                ctl.op = ECALL;
+                                ctl.regwrite = 1'b0;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                ctl.memwrite = 1'b0;
+                            end
+                            default:begin
+                                
+                            end
+                        endcase
+                    end
+                    default:begin
+                        
+                    end
+                endcase
+            end
 
 
 

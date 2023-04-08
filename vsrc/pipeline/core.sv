@@ -14,6 +14,8 @@
 `include "pipeline/regfile/pipereg_EX_MEM.sv"
 `include "pipeline/regfile/pipereg_MEM_WB.sv"
 `include "pipeline/hazard/hazard.sv"
+`include "pipeline/csr/csr.sv"
+`include "pipeline/csr/csr_pkg.sv"
 `else
 
 `endif
@@ -64,42 +66,6 @@ module core
 
 		end
 	end
-	// assign ireq.addr = pc;
-
-	// always_ff @ (posedge clk) 
-	// begin
-	// 	if( ireq.valid == 1'b0   )begin
-	// 		ireq.addr <= pc;
-	// 		ireq.valid <=1'b1;
-	// 	end
-	// 	else begin
-	// 		if(iresp.data_ok == 0)begin
-	// 			ireq.addr <= ireq.addr;
-	// 			ireq.valid <=ireq.valid;
-	// 		end
-	// 		else begin
-	// 			ireq.addr <= ireq.addr;
-	// 			ireq.valid <= 1'b0;
-	// 		end
-	// 	end	
-	// end
-
-	// always_comb begin
-	// 	if(op == BEQ_P  )begin
-	// 		if(dataD_next.ctl.op != UNKNOWN)
-	// 			ireq.valid = 1'b1 ;
-	// 		else
-	// 			ireq.valid = 1'b1 ;
-	// 	end
-	// 	// else if(op == JAL_P  )begin
-	// 	// 	if(dataD_next.ctl.op == JAL)
-	// 	// 		ireq.valid = 1'b1 ;
-	// 	// 	else
-	// 	// 		ireq.valid = 1'b0 ;
-	// 	// end
-	// 	else
-	// 		ireq.valid = 1'b1 ;
-	// end
 
 	u32 raw_instr;
 	// assign raw_instr=iresp.data;
@@ -122,6 +88,13 @@ module core
 	
 	creg_addr_t ra1, ra2;
 	word_t rd1, rd2;
+
+	u12 csr_read_addr;
+    word_t csr_read_data;
+	u12 csr_write_addr;
+    word_t csr_write_data;
+	u1 csr_write_valid, is_mret;
+	u64 pcselect_mepc;
 
 	instfunc_t op;
     u64 offset;
@@ -175,6 +148,7 @@ module core
 		.dataD,
 
 		.ra1, .ra2, .rd1, .rd2,
+		.csr_read_addr, .csr_read_data,
 		.op, .offset, .is_jump
 	);
 
@@ -239,7 +213,10 @@ module core
 
 	writeback writeback(
 		.dataM(dataM_next),
-		.dataW
+		.dataW,
+		.csr_write_addr, 
+    	.csr_write_data,
+		.csr_write_valid
 	);
 
 	hazard hazard(
@@ -257,6 +234,16 @@ module core
 		.is_bubbleM(dataM.is_bubble),
 		.is_bubbleW(dataW.is_bubble),
 		.is_bubble(dataD.is_bubble)
+	);
+
+	csr csr(
+		.clk, .reset,
+		.valid(csr_write_valid), .is_mret,
+		.csr_write_addr,
+		.csr_read_addr,
+		.write_data(csr_write_data),
+		.read_data(csr_read_data),
+		.pcselect_mepc
 	);
 
 `ifdef VERILATOR

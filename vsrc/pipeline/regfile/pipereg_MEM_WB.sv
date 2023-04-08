@@ -31,6 +31,9 @@ module pipereg_MEM_WB
             dataM_out.ctl <= '0;
             dataM_out.dst <= '0;
             dataM_out.is_bubble <= 1'b1;
+            dataM_out.csr <= '0;
+            dataM_out.csr_reg_write <= '0;
+            dataM_out.csr_result <= '1;
         end
         else if(Dwait == 1)begin
             dataM_out.result <= last_dataM.result;
@@ -38,6 +41,9 @@ module pipereg_MEM_WB
             dataM_out.ctl <= last_dataM.ctl;
             dataM_out.dst <= last_dataM.dst;
             dataM_out.is_bubble <= 1'b1;
+            dataM_out.csr <= last_dataM.csr;
+            dataM_out.csr_reg_write <= last_dataM.csr_reg_write;
+            dataM_out.csr_result <= last_dataM.csr_result;
         end
         else begin
             dataM_out <= dataM_in;

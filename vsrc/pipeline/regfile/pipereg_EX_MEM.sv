@@ -47,6 +47,9 @@ module pipereg_EX_MEM
             dataE_out.ctl <= '0;
             dataE_out.dst <= '0;
             dataE_out.is_bubble <= 1'b1;
+            dataE_out.csr <= '0;
+            dataE_out.csr_reg_write <= '0;
+            dataE_out.csr_result <= '0;
         end
         else begin
             dataE_out <= dataE_in;

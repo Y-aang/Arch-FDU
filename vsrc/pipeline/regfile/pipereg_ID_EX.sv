@@ -57,6 +57,8 @@ module pipereg_ID_EX
             dataD_out.pc <= 64'h8000_0000;
             dataD_out.is_bubble <= 1'b1;
             dataD_out.shamt <= '0;
+            dataD_out.csr <= '0;
+            dataD_out.csr_reg_write <= '0;
         end
         else begin
             dataD_out <= dataD_in;

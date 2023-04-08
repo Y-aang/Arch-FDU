@@ -291,6 +291,31 @@ module execute
                 alu_b = {32'b0, dataD.srcb[31:0]};
             end
 
+            CSRRW:begin
+                alu_a = dataD.srca;
+                alu_b = '0;
+            end
+            CSRRS:begin
+                alu_a = dataD.csr_reg_write;
+                alu_b = dataD.srca;
+            end
+            CSRRC:begin
+                alu_a = dataD.csr_reg_write;
+                alu_b = ~dataD.srca;
+            end
+            CSRRWI:begin
+                alu_a = dataD.immediate;
+                alu_b = '0;
+            end
+            CSRRSI:begin
+                alu_a = dataD.csr_reg_write;
+                alu_b = dataD.immediate;
+            end
+            CSRRCI:begin
+                alu_a = dataD.csr_reg_write;
+                alu_b = ~dataD.immediate;
+            end
+
             default:begin
                 alu_a = '0;
                 alu_b = '0;
@@ -480,6 +505,26 @@ module execute
             MULW:begin
                 dataE.result = { {32{multiply_result[31]}},multiply_result[31:0] };
             end
+
+        //中断与异常
+            CSRRW:begin
+                dataE.result = dataD.csr_reg_write;
+            end
+            CSRRS:begin
+                dataE.result = dataD.csr_reg_write;
+            end
+            CSRRC:begin
+                dataE.result = dataD.csr_reg_write;
+            end
+            CSRRWI:begin
+                dataE.result = dataD.csr_reg_write;
+            end
+            CSRRSI:begin
+                dataE.result = dataD.csr_reg_write;
+            end
+            CSRRCI:begin
+                dataE.result = dataD.csr_reg_write;
+            end
             default:begin
                 dataE.result = result;
             end
@@ -487,7 +532,6 @@ module execute
     end
 	
 //div_tmp
-
     always_comb begin
         div_tmp = '0;
         unique case (dataD.ctl.op)
@@ -499,6 +543,34 @@ module execute
             end
             default: begin
                 div_tmp = '0; 
+            end
+        endcase 
+    end
+
+//csr_result
+    always_comb begin
+        dataE.csr_result = '0;
+        unique case (dataD.ctl.op)
+            CSRRW:begin
+                dataE.csr_result = result;
+            end
+            CSRRS:begin
+                dataE.csr_result = result;
+            end
+            CSRRC:begin
+                dataE.csr_result = result;
+            end
+            CSRRWI:begin
+                dataE.result = result;
+            end
+            CSRRSI:begin
+                dataE.csr_result = result;
+            end
+            CSRRCI:begin
+                dataE.csr_result = result;
+            end
+            default: begin
+                dataE.csr_result = '0;
             end
         endcase 
     end

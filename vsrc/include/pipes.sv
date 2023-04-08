@@ -94,6 +94,19 @@ parameter F7_1_REMW = 7'b0000001;
 parameter F3_REMUW = 3'b111;
 parameter F7_1_REMUW = 7'b0000001;
 
+parameter F7_CSRRW = 7'b1110011;
+parameter F3_CSRRW = 3'b001;
+parameter F3_CSRRS = 3'b010;
+parameter F3_CSRRC = 3'b011;
+parameter F3_CSRRWI = 3'b101;
+parameter F3_CSRRSI = 3'b110;
+parameter F3_CSRRCI = 3'b111;
+parameter F3_MRET = 3'b000;
+parameter F32_MRET = 32'b0011000_00010_00000_000_00000_1110011;
+parameter F32_ECALL = 32'b000000000000_00000_000_00000_1110011;
+
+
+
 /* Define pipeline structures here */
 typedef struct packed {
 	u32 raw_instr;
@@ -117,7 +130,11 @@ typedef enum logic[6:0] {
 	SB, SH, SW,
 
 	MUL, DIV, DIVU, REM, REMU,
-	MULW, DIVW, DIVUW, REMW, REMUW
+	MULW, DIVW, DIVUW, REMW, REMUW,
+
+	CSRRW, CSRRS, CSRRC, 
+	CSRRWI, CSRRSI, CSRRCI,
+	MRET, ECALL
  } decode_op_t;
 
 typedef enum logic [6:0] {
@@ -156,6 +173,8 @@ typedef struct packed {
 	word_t memory_address;
 	u64 pc;
 	u1 is_bubble;
+	u12 csr;
+	u64 csr_reg_write;
 } decode_data_t;
 
 typedef struct packed {
@@ -166,6 +185,9 @@ typedef struct packed {
 	word_t memory_address;
 	u1 is_bubble;
 	u1 is_waiting;
+	u12 csr;
+	u64 csr_reg_write;
+	u64 csr_result;
 } execute_data_t;
 
 typedef struct packed {
@@ -175,6 +197,9 @@ typedef struct packed {
 	creg_addr_t dst;
 	word_t memory_address;
 	u1 is_bubble;
+	u12 csr;
+	u64 csr_reg_write;
+	u64 csr_result;
 } memory_data_t;
 
 typedef struct packed {
@@ -184,6 +209,9 @@ typedef struct packed {
 	creg_addr_t dst;
 	word_t memory_address;
 	u1 is_bubble;
+	u12 csr;
+	u64 csr_reg_write;
+	u64 csr_result;
 } writeback_data_t;
 
 typedef struct packed {

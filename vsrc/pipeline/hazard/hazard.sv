@@ -55,7 +55,9 @@ module hazard
             ctl.op == SRLIW  || ctl.op == SRAIW ||
             ctl.op == LB  || ctl.op == LH ||
             ctl.op == LW  || ctl.op == LBU ||
-            ctl.op == LHU  || ctl.op == LWU )
+            ctl.op == LHU  || ctl.op == LWU ||
+            ctl.op == CSRRW  || ctl.op == CSRRS ||
+            ctl.op == CSRRC  )
         begin
             if( is_bubble ==0 && 
                 ( ( (is_bubbleE ==0 && ra1 == dataE_dst) 

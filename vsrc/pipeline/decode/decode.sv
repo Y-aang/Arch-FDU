@@ -18,6 +18,9 @@ module decode
     output creg_addr_t ra1, ra2,
     input word_t rd1, rd2,
 
+    output u12 csr_read_addr, 
+    input word_t csr_read_data,
+
     output instfunc_t op,
     output u64 offset,
 
@@ -131,6 +134,25 @@ module decode
             ADDIW:begin
                 dataD.immediate = {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20]};
             end
+            
+            CSRRW:begin
+                dataD.immediate = {59'b0, dataF.raw_instr[19:15]};
+            end
+            CSRRS:begin
+                dataD.immediate = {59'b0, dataF.raw_instr[19:15]};
+            end
+            CSRRC:begin
+                dataD.immediate = {59'b0, dataF.raw_instr[19:15]};
+            end
+            CSRRWI:begin
+                dataD.immediate = {59'b0, dataF.raw_instr[19:15]};
+            end
+            CSRRSI:begin
+                dataD.immediate = {59'b0, dataF.raw_instr[19:15]};
+            end
+            CSRRCI:begin
+                dataD.immediate = {59'b0, dataF.raw_instr[19:15]};
+            end
             default: begin
                 dataD.immediate = {{52{dataF.raw_instr[31]}}, dataF.raw_instr[31:20]};
             end
@@ -237,8 +259,9 @@ module decode
             end
         endcase
     end
-
-    
+//取csr和csr_reg_write
+    assign dataD.csr = dataF.raw_instr[31:20];
+    assign dataD.csr_reg_write = csr_read_data;
 endmodule
 
 
