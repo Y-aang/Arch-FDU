@@ -1,6 +1,6 @@
 # Architecture 2022Spring Fudan
 
- ：https://fducslg.github.io/Arch-2022Spring-FDU/
+课程链接：https://fducslg.github.io/Arch-2022Spring-FDU/
 
 ### 项目结构
 Arch-2022Sping-FDU  
